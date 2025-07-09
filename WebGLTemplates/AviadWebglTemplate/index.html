@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en-us">
+<head>
+    <meta charset="utf-8">
+    <title>Unity WebGL Game</title>
+    <link rel="stylesheet" href="TemplateData/style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <script src="index.js"></script>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            background: #000;
+            height: 100%;
+            overflow: hidden;
+        }
+        #unity-container {
+            width: 100%;
+            height: 100%;
+            position: fixed;
+            top: 0;
+            left: 0;
+        }
+        canvas {
+            width: 100% !important;
+            height: 100% !important;
+            display: block;
+            background: #000;
+        }
+        #unity-footer, #unity-logo-title-footer {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+<div id="unity-container">
+    <canvas id="unity-canvas" tabindex="-1"></canvas>
+    <div id="unity-loading-bar">
+        <div id="unity-logo"></div>
+        <div id="unity-progress-bar-empty">
+            <div id="unity-progress-bar-full"></div>
+        </div>
+    </div>
+    <div id="unity-warning"></div>
+</div>
+<script>
+    const canvas = document.querySelector("#unity-canvas");
+
+    function unityShowBanner(msg, type) {
+        const warningBanner = document.querySelector("#unity-warning");
+        function updateBannerVisibility() {
+            warningBanner.style.display = warningBanner.children.length ? 'block' : 'none';
+        }
+        const div = document.createElement('div');
+        div.innerHTML = msg;
+        warningBanner.appendChild(div);
+        div.style = type === 'error'
+            ? 'background: red; padding: 10px;'
+            : 'background: yellow; padding: 10px;';
+        if (type !== 'error') {
+            setTimeout(() => {
+                warningBanner.removeChild(div);
+                updateBannerVisibility();
+            }, 5000);
+        }
+        updateBannerVisibility();
+    }
+
+    const buildUrl = "Build";
+    const loaderUrl = buildUrl + "/webgl.loader.js";
+    const config = {
+        dataUrl: buildUrl + "/webgl.data.gz",
+        frameworkUrl: buildUrl + "/webgl.framework.js.gz",
+        codeUrl: buildUrl + "/webgl.wasm.gz",
+        streamingAssetsUrl: "StreamingAssets",
+        companyName: "DefaultCompany",
+        productName: "UnitySampleProject",
+        productVersion: "1.0",
+        showBanner: unityShowBanner,
+    };
+
+    document.querySelector("#unity-loading-bar").style.display = "block";
+
+    const script = document.createElement("script");
+    script.src = loaderUrl;
+    script.onload = () => {
+        createUnityInstance(canvas, config, (progress) => {
+            document.querySelector("#unity-progress-bar-full").style.width = 100 * progress + "%";
+        }).then((unityInstance) => {
+            document.querySelector("#unity-loading-bar").style.display = "none";
+        }).catch((message) => {
+            alert(message);
+        });
+    };
+    document.body.appendChild(script);
+</script>
+</body>
+</html>

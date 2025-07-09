@@ -1,0 +1,16 @@
+﻿{
+  "name": "ai.aviad.core",
+  "version": "0.1.0",
+  "displayName": "Aviad AI",
+  "description": "A package to simplify integration of language models into Unity.",
+  "unity": "2021.3",
+  "author": {
+    "name": "Aviad",
+    "url": "https://www.aviad.ai"
+  },
+  "keywords": [
+    "aviad",
+    "ai",
+    "llm"
+  ]
+}
