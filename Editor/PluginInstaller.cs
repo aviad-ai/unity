@@ -36,8 +36,17 @@ namespace Aviad
             string packagePath = GetPackagePath("ai.aviad.core");
             if (string.IsNullOrEmpty(packagePath))
             {
-                Debug.LogWarning("[Aviad] Could not locate package path for ai.aviad.core.");
-                return;
+                // Fallback for unitypackage-based install
+                string fallbackPath = Path.Combine(Application.dataPath, "AviadAI");
+                if (Directory.Exists(fallbackPath))
+                {
+                    packagePath = fallbackPath;
+                }
+                else
+                {
+                    Debug.LogWarning("[Aviad] Could not locate package path for ai.aviad.core.");
+                    return;
+                }
             }
 
             string sourceBinDir = Path.Combine(packagePath, "StreamingAssets/Aviad/bin");
