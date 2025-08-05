@@ -67,9 +67,7 @@ You may pin to a version or commit like below:
 
 *Model Configuration*
 
-* `Model Url` - provide any url to download a `.gguf` model. For example, link to a huggingface model like:
-
-`https://huggingface.co/bartowski/Llama-3.2-1B-Instruct-GGUF/resolve/main/Llama-3.2-1B-Instruct-Q4_K_M.gguf?download=true`
+* `Model Url` - provide any url to download a `.gguf` model (HuggingFace is a good place to start).
 
 * `Save To Streaming Assets` - if unchecked then download will begin upon game start. Otherwise, click `DownloadModel` to save the model file in the StreamingAssets folder.
 * `Continue Conversation After Generation` - If checked, the model will maintain conversational context across multiple turns (i.e., messages) instead of starting fresh each time.
