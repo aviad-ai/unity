@@ -2,6 +2,16 @@ using UnityEngine;
 
 namespace Aviad
 {
+    public enum LogLevel
+    {
+        Verbose = 0,
+        Debug = 1,
+        Info = 2,
+        Warning = 3,
+        Error = 4,
+        None = 5
+    }
+
     [System.Serializable]
     public class AviadGlobalSettings : ScriptableObject
     {
@@ -11,11 +21,25 @@ namespace Aviad
         [SerializeField]
         private bool enableNativeLogging = true;
 
+        [SerializeField]
+        private LogLevel logLevel = LogLevel.Info;
+
+        [SerializeField]
+        private bool m_HasBeenInitialized = false;
+
         public bool EnableNativeLogging
         {
             get => enableNativeLogging;
             set => enableNativeLogging = value;
         }
+
+        public LogLevel LogLevel
+        {
+            get => logLevel;
+            set => logLevel = value;
+        }
+
+        public bool HasBeenInitialized() => m_HasBeenInitialized;
 
         private static AviadGlobalSettings s_Instance;
 
@@ -31,7 +55,6 @@ namespace Aviad
 
                 if (s_Instance == null)
                 {
-                    Debug.LogWarning("AviadGlobalSettings not found. Using default settings.");
                     s_Instance = CreateDefaultSettings();
                 }
             }
@@ -92,6 +115,7 @@ namespace Aviad
         /// </summary>
         public void SaveSettings()
         {
+            m_HasBeenInitialized = true;
             UnityEditor.EditorUtility.SetDirty(this);
             UnityEditor.AssetDatabase.SaveAssets();
 
@@ -102,6 +126,7 @@ namespace Aviad
             if (resourcesCopy != null)
             {
                 resourcesCopy.enableNativeLogging = this.enableNativeLogging;
+                resourcesCopy.logLevel = this.logLevel;
                 UnityEditor.EditorUtility.SetDirty(resourcesCopy);
                 UnityEditor.AssetDatabase.SaveAssets();
             }
@@ -112,9 +137,11 @@ namespace Aviad
         {
             var settings = CreateInstance<AviadGlobalSettings>();
             settings.enableNativeLogging = false;
+            settings.logLevel = LogLevel.Info;
             return settings;
         }
 
         public static bool IsNativeLoggingEnabled => GetSettings().EnableNativeLogging;
+        public static LogLevel CurrentLogLevel => GetSettings().LogLevel;
     }
 }
