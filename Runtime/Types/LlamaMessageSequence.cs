@@ -10,8 +10,7 @@ namespace Aviad
     {
         public IntPtr roles;      // char** - pointer to array of string pointers
         public IntPtr contents;   // char** - pointer to array of string pointers
-        public int message_count;
-
+        [MarshalAs(UnmanagedType.U4)] public int message_count;
     }
 
     [Serializable]
@@ -25,6 +24,12 @@ namespace Aviad
             this.role = role;
             this.content = content;
         }
+
+        public Message(Message other)
+        {
+            this.role = other.role;
+            this.content = other.content;
+        }
     }
 
     [Serializable]
@@ -34,6 +39,15 @@ namespace Aviad
 
         public LlamaMessageSequence()
         {
+        }
+
+        public LlamaMessageSequence(LlamaMessageSequence other)
+        {
+            messages = new List<Message>(other.messages.Count);
+            foreach (var message in other.messages)
+            {
+                messages.Add(new Message(message));
+            }
         }
 
         public LlamaMessageSequence(NativeLlamaMessageSequence nativeSequence)

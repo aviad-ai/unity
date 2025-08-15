@@ -1,0 +1,140 @@
+using System;
+using System.Threading.Tasks;
+using UnityEngine;
+using MainThreadDispatcher;
+
+namespace Aviad
+{
+    public class AviadBackgroundNativeLibrary : IAviadGeneration
+    {
+        private readonly AviadNativeLibrary nativeLibrary;
+
+        public AviadBackgroundNativeLibrary(AviadNativeLibrary nativeLibrary)
+        {
+            this.nativeLibrary = nativeLibrary ?? throw new ArgumentNullException(nameof(nativeLibrary));
+        }
+
+        // Helper for operations with Action<bool> callbacks
+        private void RunAsync(Action<Action<bool>> operation, Action<bool> onDone)
+        {
+            Task.Run(() => operation(result => Dispatcher.Enqueue(() => onDone?.Invoke(result))));
+        }
+
+        // Helper for operations with generic result callbacks
+        private void RunAsync<T>(Action<Action<T>> operation, Action<T> onResult)
+        {
+            Task.Run(() => operation(result =>
+            {
+                Dispatcher.Enqueue(() => onResult?.Invoke(result));
+            }));
+        }
+
+        // Helper for operations with two callbacks (like GenerateResponse)
+        private void RunAsync<T1, T2>(Action<Action<T1>, Action<T2>> operation, Action<T1> callback1, Action<T2> callback2)
+        {
+            Task.Run(() => operation(
+                result1 => Dispatcher.Enqueue(() => callback1?.Invoke(result1)),
+                result2 => Dispatcher.Enqueue(() => callback2?.Invoke(result2))
+            ));
+        }
+
+        // Simple sync operations
+        public void SetLoggingEnabled(Action<bool> onDone = null)
+        {
+            nativeLibrary.SetLoggingEnabled(onDone);
+        }
+
+        // Operations with callbacks
+        public void GetContext(string contextKey, int maxTurnCount, int maxStringLength, Action<LlamaMessageSequence> onResult)
+        {
+            RunAsync(callback => nativeLibrary.GetContext(contextKey, maxTurnCount, maxStringLength, callback), onResult);
+        }
+
+        public void InitContext(string contextKey, LlamaMessageSequence messages, Action<bool> onDone = null)
+        {
+            RunAsync(callback => nativeLibrary.InitContext(contextKey, messages, callback), onDone);
+        }
+
+        public void AddTurnToContext(string contextKey, string role, string content, Action<bool> onDone = null)
+        {
+            RunAsync(callback => nativeLibrary.AddTurnToContext(contextKey, role, content, callback), onDone);
+        }
+
+        public void AppendToContext(string contextKey, string content, Action<bool> onDone = null)
+        {
+            RunAsync(callback => nativeLibrary.AppendToContext(contextKey, content, callback), onDone);
+        }
+
+        public void CopyContext(string sourceContextKey, string targetContextKey, Action<bool> onDone = null)
+        {
+            RunAsync(callback => nativeLibrary.CopyContext(sourceContextKey, targetContextKey, callback), onDone);
+        }
+
+        public void FreeContext(string contextKey, Action<bool> onDone = null)
+        {
+            RunAsync(callback => nativeLibrary.FreeContext(contextKey, callback), onDone);
+        }
+
+        public void InitializeModel(string modelId, LlamaInitializationParams initializationParams, Action<bool> onDone = null)
+        {
+            RunAsync(callback => nativeLibrary.InitializeModel(modelId, initializationParams, callback), onDone);
+        }
+
+        public void AbortInitializeModel(string modelId, Action<bool> onDone = null)
+        {
+            RunAsync(callback => nativeLibrary.AbortInitializeModel(modelId, callback), onDone);
+        }
+
+        public void ShutdownModel(string modelId, Action<bool> onDone = null)
+        {
+            RunAsync(callback => nativeLibrary.ShutdownModel(modelId, callback), onDone);
+        }
+
+        public void UnloadActiveContext(string modelId, Action<bool> onDone = null)
+        {
+            RunAsync(callback => nativeLibrary.UnloadActiveContext(modelId, callback), onDone);
+        }
+
+        public void LoadContext(string modelId, string contextKey, string templateString, Action<bool> onDone = null)
+        {
+            RunAsync(callback => nativeLibrary.LoadContext(modelId, contextKey, templateString, callback), onDone);
+        }
+
+        public void CacheContext(string modelId, Action<bool> onDone = null)
+        {
+            RunAsync(callback => nativeLibrary.CacheContext(modelId, callback), onDone);
+        }
+
+        public void GenerateResponse(string modelId, string contextKey, string outContextKey, LlamaGenerationConfig config, Action<string> onToken, Action<bool> onDone)
+        {
+            RunAsync((tokenCallback, doneCallback) => nativeLibrary.GenerateResponse(modelId, contextKey, outContextKey, config, tokenCallback, doneCallback), onToken, onDone);
+        }
+
+        public void ComputeEmbeddings(string modelId, string context, LlamaEmbeddingParams embeddingParams, Action<float[]> onResult = null)
+        {
+            RunAsync(callback => nativeLibrary.ComputeEmbeddings(modelId, context, embeddingParams, callback), onResult);
+        }
+
+        public void AbortGeneration(string modelId, Action<bool> onDone = null)
+        {
+            RunAsync(callback => nativeLibrary.AbortGeneration(modelId, callback), onDone);
+        }
+
+        public void Dispose()
+        {
+            Task.Run(() => nativeLibrary?.Dispose());
+        }
+
+        public bool SafeEnsureLoaded()
+        {
+            // Intentionally not on another thread;
+            return nativeLibrary.SafeEnsureLoaded();
+        }
+
+        public void EnsureLoaded()
+        {
+            // Intentionally not on another thread;
+            nativeLibrary.EnsureLoaded();
+        }
+    }
+}

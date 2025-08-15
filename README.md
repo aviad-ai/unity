@@ -32,13 +32,6 @@ This package is an easy way to integrate LLMs into the Unity engine. It runs on 
 
 This package should support Windows, MacOS, and WebGL. Please create an issue if you run into trouble! Or join our [Discord](https://discord.gg/Jk4jUYghnA).
 
-## Quick Start Video Tutorial
-Minute long YouTube tutorial to get started 👇
-
-<a href="https://www.youtube.com/watch?v=ISI8tTZ8gwc">
-  <img src="https://img.youtube.com/vi/ISI8tTZ8gwc/0.jpg" alt="Watch the demo" width="480">
-</a>
-
 ## Setup
 
 1. Add via Unity Package Manager. `Window -> Package Manager`.
@@ -53,7 +46,7 @@ Minute long YouTube tutorial to get started 👇
 
 You may pin to a version or commit like below:
 
-`    "ai.aviad.core": "https://github.com/aviad-ai/unity.git#0.1.0",`
+`    "ai.aviad.core": "https://github.com/aviad-ai/unity.git#0.2.0",`
 
 ## Usage
 
@@ -62,28 +55,11 @@ You may pin to a version or commit like below:
 * Add component and select `AviadRunner`
 
 #### 2. Configure `AviadRunner` in the inspector view.
+* Create a new AviadModel asset to hold the model settings. Or use an existing one from the package.
+* Set `Model Asset` field.
+* Open the AviadModel asset and click *Download Model*
 
-<img width="300" src="images/AviadRunnerConfig.png" alt="AviadRunner inspector view">
-
-*Model Configuration*
-
-* `Model Url` - provide any url to download a `.gguf` model (HuggingFace is a good place to start).
-
-* `Save To Streaming Assets` - if unchecked then download will begin upon game start. Otherwise, click `DownloadModel` to save the model file in the StreamingAssets folder.
-* `Continue Conversation After Generation` - If checked, the model will maintain conversational context across multiple turns (i.e., messages) instead of starting fresh each time.
-* `Max Context Length` - The maximum number of tokens the model can use as input context. Should match the model's trained context length (e.g., 4096).
-* `GPU Layers` - Number of layers to offload to the GPU. Please set to 0 meaning the model runs entirely on CPU.
-* `Threads` - Number of threads to use for inference. Higher values can improve performance on multicore CPUs.
-* `Max Batch Length` - The maximum number of tokens that can be processed in a single batch during inference. Used to tune performance.
-
-*Generation Configuration*
-
-* `Chat Template` - Name of the prompt template used for chat formatting (e.g., "chatml", "llama2", etc.). Required for proper context structuring.
-* `Grammar String` - Optional grammar constraints for output generation. Use structured syntax if supported by the model (e.g., GBNF).
-* `Temperature` - Sampling temperature for randomness. Lower values (e.g., 0.2) make output more deterministic; higher values (e.g., 1.0) increase creativity.
-* `Top P` - Controls nucleus sampling. The model samples from the smallest possible set of tokens whose cumulative probability exceeds this value. Lower = more focused.
-* `Max Tokens` - Maximum number of tokens the model is allowed to generate in the response.
-* `Chunk Size` - The number of tokens returned at a time when streaming output. Smaller values give faster feedback but may introduce latency.
+<img width="300" src="images/AviadRunner.png" alt="AviadRunner inspector view">
 
 #### 3. Implement a script to interface with `AviadRunner`. At a high level, these methods will set up and run the model:
 * Call `AddTurnToContext` to add to the model's context at runtime. Example usage:
@@ -96,14 +72,11 @@ You may pin to a version or commit like below:
 * Call `Reset` to clear the current conversation context completely.
 
 #### 4. See [UnitySamples](https://github.com/aviad-ai/UnitySamples) for example usage and inspiration!
-See more details in the section below.
 
 ## Sample Games
 
-We have two sample games so far that you can take and use:
-* [BaseDialogueSample](https://github.com/aviad-ai/UnitySamples/tree/main/BaseDialogueSample) - very simple implementation
-with chatbot like interface
-* [The Tell-Tale Heart](https://github.com/aviad-ai/UnitySamples/tree/main/TheTellTaleHeart) - our first game demo that showcases
+We have one sample game so far that you can take and use:
+* [The Tell-Tale Heart](https://github.com/aviad-ai/TheTellTaleHeart) - our first game demo that showcases
 an SLM making and explaining in-character choices. It's free to play on [itch](https://aviadai.itch.io/the-tell-tale-heart).
 
 <a href="https://www.youtube.com/watch?v=z-lg043BYF8">
