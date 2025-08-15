@@ -2,6 +2,7 @@
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -10,282 +11,194 @@ namespace Aviad
 {
     public class AviadRunner : MonoBehaviour
     {
+        [SerializeField] public bool saveToStreamingAssets = true;
+        [SerializeField] public bool continueConversationAfterGeneration = true;
+
         [Header("Model Configuration")]
-        [SerializeField] private string modelUrl = "";
-        [SerializeField] private bool saveToStreamingAssets = true;
-        [SerializeField] private bool continueConversationAfterGeneration = true;
-        [SerializeField] private int maxContextLength = 4096;
-        [SerializeField] private int gpuLayers = 0;
-        [SerializeField] private int threads = 4;
-        [SerializeField] private int maxBatchLength = 512;
+        [SerializeField] public AviadModel modelAsset;
 
-        [Header("Generation Configuration")]
-        [SerializeField] private string chatTemplate = "";
-        [SerializeField] private string grammarString = "";
-        [SerializeField] private float temperature = 0.7f;
-        [SerializeField] private float topP = 0.9f;
-        [SerializeField] private int maxTokens = 256;
-        [SerializeField] private int chunkSize = 1;
+        public AviadModelRuntime runtime;
 
-        private IAviadGeneration _aviadInstance;
         private string _inputContextKey = "input_context";
         private string _outputContextKey = "output_context";
-        private bool _isAvailable = false;
         private bool _isGenerating = false;
-
-        private string _localModelPath = "";
-        private string _lastModelUrl = "";
-        private bool _lastSaveToStreamingAssets = false;
+        private OperationQueue _operationQueue = new OperationQueue();
 
         public bool EnableNativeLogging => AviadGlobalSettings.IsNativeLoggingEnabled;
-
-        public static string GetHash(string input)
-        {
-            using (var sha = SHA256.Create())
-            {
-                byte[] bytes = sha.ComputeHash(Encoding.UTF8.GetBytes(input));
-                StringBuilder builder = new StringBuilder();
-                foreach (byte b in bytes)
-                    builder.Append(b.ToString("x2"));
-                return builder.ToString();
-            }
-        }
-
-        public string GetModelUrl() => modelUrl;
-        public bool IsAvailable => _isAvailable;
+        public string ModelUrl => modelAsset.modelUrl;
+        public bool IsPluginAvailable => AviadManager.Instance != null;
+        public bool IsDownloaded => runtime != null && runtime.IsDownloaded;
+        public bool IsAvailable => runtime != null && runtime.IsAvailable;
         public bool IsGenerating => _isGenerating;
 
         private void OnValidate()
         {
-            if (_lastModelUrl != modelUrl || _lastSaveToStreamingAssets != saveToStreamingAssets)
+            if (!saveToStreamingAssets && modelAsset != null &&
+                !System.IO.File.Exists(AviadModelRuntime.GetExpectedModelPath(modelAsset.modelUrl)))
             {
-                _lastModelUrl = modelUrl;
-                _lastSaveToStreamingAssets = saveToStreamingAssets;
-
-                string hash = GetHash(modelUrl);
-                string path = Path.Combine(Application.streamingAssetsPath, "Aviad/Models", hash);
-
-                if (!File.Exists(path) && _lastSaveToStreamingAssets)
-                {
-                    if (EnableNativeLogging)
-                        Debug.Log("[AviadRunner] Model not found. You can download it from the Inspector.");
-                }
+                Debug.LogWarning(
+                    $"The model asset '{modelAsset.name}' is missing. Open the AviadModel '{modelAsset.name}' and click 'DownloadModel' to retrieve it."
+                );
             }
         }
 
+        private void Start() {
+            runtime = new AviadModelRuntime(modelAsset, saveToStreamingAssets);
+            runtime.onStateUpdate += OnRuntimeStateChange;
 
-        private void Start()
-        {
-            Action<bool> onInitializeModel = success =>
+            foreach (var handler in _pendingRuntimeStateSubscribers)
             {
-                Debug.Log($"Model Initialized: {success}");
-                if (success)
-                {
-                    _isAvailable = true;
-                    InitializeContext();
-                }
-            };
-            Action<bool> onDownload = success =>
-            {
-                Debug.Log($"Model Downloaded: {success}");
-                if(success) {
-                    InitializeModel(onInitializeModel);
-                }
-            };
-            Action<bool> onInitialize = success =>
-            {
-                Debug.Log($"Native plugin initialized: {AviadInteropManager.Instance != null}");
-                if (AviadInteropManager.Instance != null)
-                {
-                    _aviadInstance = AviadInteropManager.Instance;
-                    DownloadModel(onDownload);
-                    if (EnableNativeLogging)
-                    {
-                        bool loggingSuccess = _aviadInstance.SetLoggingEnabled();
-                        Debug.Log("[AviadRunner] Logging setup success: " + loggingSuccess);
-                    }
-                }
-            };
-            AviadInteropManager.Initialize(onInitialize);
+                runtime.onStateUpdate += handler;
+            }
+            _pendingRuntimeStateSubscribers.Clear();
+
+            runtime.Initialize();
         }
 
-        internal string GetExpectedModelPath()
-        {
-            string modelHash = GetHash(modelUrl);
-#if UNITY_WEBGL && !UNITY_EDITOR
-            return "/" + modelHash + ".bin";
-#else
-            string modelDirectory = Path.Combine(Application.streamingAssetsPath, "Aviad/Models");
-            Directory.CreateDirectory(modelDirectory);
-            return Path.Combine(modelDirectory, modelHash);
-#endif
-        }
+        private List<Action> _pendingRuntimeStateSubscribers = new List<Action>();
 
-        internal void DownloadModel(Action<bool> onComplete)
+        public void SubscribeToRuntimeStateUpdate(Action handler)
         {
-            _localModelPath = GetExpectedModelPath();
-            if (File.Exists(_localModelPath)) {
-                onComplete?.Invoke(true);
-                return;
-            }
-            else if (saveToStreamingAssets)
+            if (runtime != null)
             {
-                Debug.LogError("[AviadRunner] Model is not present (Please trigger download in-editor).");
-                onComplete?.Invoke(false);
-                return;
+                runtime.onStateUpdate += handler;
             }
-            Debug.Log("[AviadRunner] Downloading model...");
-#if UNITY_WEBGL && !UNITY_EDITOR
-            if (AviadInteropManager.WebGLInstance == null) {
-                Debug.LogError("WebGL interface not available.");
-                onComplete?.Invoke(false);
-                return;
-            }
-            AviadInteropManager.WebGLInstance.DownloadFile(modelUrl, _localModelPath, onComplete);
-#else
-            Task.Run(async () =>
+            else
             {
-                bool result = await DownloadModelToFile(modelUrl, _localModelPath);
-                onComplete?.Invoke(result);
-            });
-#endif
-        }
-
-        internal async Task<bool> DownloadModelToFile(string url, string filePath)
-        {
-           using (UnityWebRequest request = UnityWebRequest.Get(url))
-            {
-                request.downloadHandler = new DownloadHandlerFile(filePath);
-                var operation = request.SendWebRequest();
-                while (!operation.isDone)
-                    await Task.Yield();
-
-#if UNITY_2020_1_OR_NEWER
-                if (request.result != UnityWebRequest.Result.Success)
-#else
-                if (request.isNetworkError || request.isHttpError)
-#endif
-                {
-                    Debug.LogError($"Download error: {request.error}");
-                    return false;
-                }
-                return true;
+                _pendingRuntimeStateSubscribers.Add(handler);
             }
         }
 
-        private void InitializeModel(Action<bool> onComplete)
+        protected void OnRuntimeStateChange()
         {
-            if (_aviadInstance == null) return;
-            _aviadInstance.InitializeModel(
-                new LlamaModelParams(
-                    _localModelPath,
-                    maxContextLength,
-                    gpuLayers,
-                    GetSafeThreadCount(),
-                    maxBatchLength
-                ),
-                onComplete);
+            if (runtime.IsAvailable) InitializeContext();
         }
 
-        private int GetSafeThreadCount()
+        private void InitializeContext()
         {
-#if UNITY_WEBGL && !UNITY_EDITOR
-    return 1;
-#else
-            return threads;
-#endif
-        }
-
-        private bool InitializeContext()
-        {
-            if (_aviadInstance == null) return false;
+            if (AviadManager.Instance == null) return;
             var emptySequence = new LlamaMessageSequence();
-            bool initSuccess = _aviadInstance.InitContext(_inputContextKey, emptySequence);
-            return initSuccess;
+            AviadManager.Instance.InitContext(_inputContextKey, emptySequence);
         }
 
-        public bool Reset()
+        public void Reset()
         {
-            if (_aviadInstance == null) return false;
-            if (!_isAvailable) return false;
-            bool success = _aviadInstance.UnloadActiveContext();
-            if (!success) return false;
-            return InitializeContext();
-        }
-
-        public bool AddTurnToContext(string role, string content)
-        {
-            if (_aviadInstance == null) return false;
-            if (!_isAvailable || _isGenerating) return false;
-            return _aviadInstance.AddTurnToContext(_inputContextKey, role, content);
-        }
-
-        public bool Generate(Action<string> onUpdate, Action<bool> onDone)
-        {
-            if (_aviadInstance == null) return false;
-            if (!_isAvailable || _isGenerating) return false;
-
-            var config = new LlamaGenerationConfig(
-                chatTemplate,
-                grammarString,
-                temperature,
-                topP,
-                maxTokens
-            );
-
-            void WrappedOnDone(bool success)
-            {
-                onDone?.Invoke(success);
-                OnGenerationSuccess(success);
-            }
-
-            _isGenerating = true;
-            _aviadInstance.GenerateResponseStreaming(
-                _inputContextKey,
-                _outputContextKey,
-                config,
-                onUpdate,
-                WrappedOnDone,
-                chunkSize
-            );
-            return true;
-        }
-
-        private void OnGenerationSuccess(bool success)
-        {
-            if (_aviadInstance == null) return;
-            _isGenerating = false;
-            if (success && continueConversationAfterGeneration)
-            {
-                _aviadInstance.CopyContext(_outputContextKey, _inputContextKey);
-            }
-        }
-
-        public bool CopyContextToInput()
-        {
-            if (_aviadInstance == null) return false;
-            if (!_isAvailable || _isGenerating) return false;
-            return _aviadInstance.CopyContext(_outputContextKey, _inputContextKey);
-        }
-
-        public void DebugContext()
-        {
-            Action<LlamaMessageSequence> onInputMessages = messages =>
-            {
-                Debug.LogFormat("[AviadRunner] Input Context: {0}", messages.messages.Count);
-            };
-            Action<LlamaMessageSequence> onOutputMessages = messages =>
-            {
-                Debug.LogFormat("[AviadRunner] Output Context: {0}", messages.messages.Count);
-            };
-            _aviadInstance.GetContext(_inputContextKey, 16, 128, onInputMessages);
-            _aviadInstance.GetContext(_outputContextKey, 16, 128, onOutputMessages);
+            if (AviadManager.Instance == null) return;
+            if (!runtime.IsAvailable) return;
+            AviadManager.Instance.UnloadActiveContext(runtime.ModelId, (success) => {
+                if (!success) return;
+                InitializeContext();
+            });
         }
 
         private void OnDisable()
         {
-            if (_aviadInstance == null) return;
-            _aviadInstance.Cleanup();
+            if (runtime != null) runtime.onStateUpdate -= OnRuntimeStateChange;
+            if (AviadManager.Instance != null) AviadManager.Cleanup();
+        }
+
+        private void OnGenerationSuccess(bool success)
+        {
+            if (AviadManager.Instance == null)
+            {
+                Debug.Log("Aviad manager instance is null after generation.");
+                return;
+            }
+            _isGenerating = false;
+            if (success && continueConversationAfterGeneration)
+            {
+                AviadManager.Instance.CopyContext(_outputContextKey, _inputContextKey);
+            }
+        }
+
+        // Public wrapper methods using OperationQueue
+        // AviadRunner ensures that public operations are not executed until all previous calls have completed.
+        // This helps prevent buggy code from being written.
+
+        public void AddTurnToContext(string role, string content, Action<bool> onDone = null)
+        {
+            var operationId = _operationQueue.GetNewId();
+            var wrappedCallback = _operationQueue.WrapAction<bool>(operationId, onDone);
+            _operationQueue.HandleOrderedAction(operationId, () => AddTurnToContextInternal(role, content, wrappedCallback));
+        }
+
+        public void Generate(Action<string> onUpdate, Action<bool> onDone)
+        {
+            var operationId = _operationQueue.GetNewId();
+            var wrappedCallback = _operationQueue.WrapAction<bool>(operationId, onDone);
+            _operationQueue.HandleOrderedAction(operationId, () => GenerateInternal(onUpdate, wrappedCallback));
+        }
+
+        public void GetEmbeddings(string context, Action<float[]> onResult)
+        {
+            var operationId = _operationQueue.GetNewId();
+            var wrappedCallback = _operationQueue.WrapAction<float[]>(operationId, onResult);
+            _operationQueue.HandleOrderedAction(operationId, () => GetEmbeddingsInternal(context, wrappedCallback));
+        }
+
+        public void GetInputContext(Action<LlamaMessageSequence> onResult)
+        {
+            var operationId = _operationQueue.GetNewId();
+            var wrappedCallback = _operationQueue.WrapAction<LlamaMessageSequence>(operationId, onResult);
+            _operationQueue.HandleOrderedAction(operationId, () => GetInputContextInternal(wrappedCallback));
+        }
+
+        public void GetOutputContext(Action<LlamaMessageSequence> onResult)
+        {
+            var operationId = _operationQueue.GetNewId();
+            var wrappedCallback = _operationQueue.WrapAction<LlamaMessageSequence>(operationId, onResult);
+            _operationQueue.HandleOrderedAction(operationId, () => GetOutputContextInternal(wrappedCallback));
+        }
+
+        private void AddTurnToContextInternal(string role, string content, Action<bool> onDone)
+        {
+            if (AviadManager.Instance == null) return;
+            if (!runtime.IsAvailable || _isGenerating) return;
+            AviadManager.Instance.AddTurnToContext(_inputContextKey, role, content, onDone);
+        }
+
+        private void GenerateInternal(Action<string> onUpdate, Action<bool> onDone)
+        {
+            if (AviadManager.Instance == null) return;
+            if (!runtime.IsAvailable || _isGenerating)
+            {
+                AviadLogger.Warning($"AviadRunner aborting Generation due to busy status. Runtime available?: {runtime.IsAvailable}, IsGenerating?:{IsGenerating}.");
+                return;
+            }
+
+            var config = modelAsset.generationConfig;
+
+            void WrappedOnDone(bool success)
+            {
+                // We need to call the local function first to free up the resources. Otherwise we have a race condition for other generation users
+                OnGenerationSuccess(success);
+                onDone?.Invoke(success);
+            }
+
+            _isGenerating = true;
+            AviadManager.Instance.GenerateResponse(
+                runtime.ModelId,
+                _inputContextKey,
+                _outputContextKey,
+                config,
+                onUpdate,
+                WrappedOnDone
+            );
+        }
+
+        private void GetEmbeddingsInternal(string context, Action<float[]> onResult)
+        {
+            AviadManager.Instance.ComputeEmbeddings(runtime.ModelId,context, modelAsset.embeddingParams, onResult);
+        }
+
+        private void GetInputContextInternal(Action<LlamaMessageSequence> onResult)
+        {
+            AviadManager.Instance.GetContext(_inputContextKey, 16, 128, onResult);
+        }
+
+        private void GetOutputContextInternal(Action<LlamaMessageSequence> onResult)
+        {
+            AviadManager.Instance.GetContext(_outputContextKey, 16, 128, onResult);
         }
     }
 }

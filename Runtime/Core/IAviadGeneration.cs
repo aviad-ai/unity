@@ -3,12 +3,16 @@ using UnityEngine;
 
 namespace Aviad
 {
-    public interface IAviadGeneration
+    /*
+     * Interface to Aviad's C++ plugin.
+     * C# side is responsible for allocation.
+     * Callbacks enable consistency between async and sync.
+     * Return value of false indicates failure.
+     */
+    public interface IAviadGeneration : IDisposable
     {
-        void Cleanup();
-
-        // Logging
-        bool SetLoggingEnabled();
+        void SetLoggingEnabled(
+            Action<bool> onDone = null);
 
         // Context Management
         void GetContext(
@@ -16,23 +20,63 @@ namespace Aviad
             int maxTurnCount,
             int maxStringLength,
             Action<LlamaMessageSequence> onResult);
-        bool InitContext(string contextKey, LlamaMessageSequence messages, Action<bool> onDone = null);
-        bool AddTurnToContext(string contextKey, string role, string content, Action<bool> onDone = null);
-        bool AppendToContext(string contextKey, string content, Action<bool> onDone = null);
-        bool CopyContext(string sourceContextKey, string targetContextKey, Action<bool> onDone = null);
+        void InitContext(
+            string contextKey,
+            LlamaMessageSequence messages,
+            Action<bool> onDone = null);
+        void AddTurnToContext(
+            string contextKey,
+            string role,
+            string content,
+            Action<bool> onDone = null);
+        void AppendToContext(
+            string contextKey,
+            string content,
+            Action<bool> onDone = null);
+        void CopyContext(
+            string sourceContextKey,
+            string targetContextKey,
+            Action<bool> onDone = null);
+        void FreeContext(
+            string contextKey,
+            Action<bool> onDone = null);
 
         // Llama.cpp Interaction
-        bool InitializeModel(LlamaModelParams modelParams, Action<bool> onComplete);
-        bool ShutdownModel(Action<bool> onComplete);
-        bool UnloadActiveContext(Action<bool> onDone = null);
-        bool LoadContext(string contextKey, string templateString, Action<bool> onDone = null);
-        bool CacheContext(Action<bool> onDone = null);
-        bool GenerateResponseStreaming(
+        void InitializeModel(
+            string modelId,
+            LlamaInitializationParams initializationParams,
+            Action<bool> onDone = null);
+        void AbortInitializeModel(
+            string modelId,
+            Action<bool> onDone = null);
+        void ShutdownModel(
+            string modelId,
+            Action<bool> onDone = null);
+        void UnloadActiveContext(
+            string modelId,
+            Action<bool> onDone = null);
+        void LoadContext(
+            string modelId,
+            string contextKey,
+            string templateString,
+            Action<bool> onDone = null);
+        void CacheContext(
+            string modelId,
+            Action<bool> onDone = null);
+        void GenerateResponse(
+            string modelId,
             string contextKey,
             string outContextKey,
             LlamaGenerationConfig config,
             Action<String> onToken,
-            Action<bool> onDone,
-            int chunkSize);
+            Action<bool> onDone);
+        void ComputeEmbeddings(
+            string modelId,
+            string context,
+            LlamaEmbeddingParams embeddingParams,
+            Action<float[]> onResult = null);
+        void AbortGeneration(
+            string modelId,
+            Action<bool> onDone = null);
     }
 }

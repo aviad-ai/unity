@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fcf7219bab7fe46a1ad266029b2fee19, type: 3}
+  m_Name: Readme
+  m_EditorClassIdentifier: 
+  icon: {fileID: 2800000, guid: 4650fa827dfe7664a8b7e4dbdb03b1a8, type: 3}
+  title: aviad.ai
+  sections:
+  - heading: Welcome to the aviad unity plugin
+    text: This plugin contains a sample scene to get started. We look forward to
+      seeing what you can create!
+    linkText: 
+    url: 
+  - heading: Support and Sales
+    text: 
+    linkText: Visit our website.
+    url: https://aviad.ai
+  - heading: Blog
+    text: 
+    linkText: Interested in learning more about AI in gaming?
+    url: https://aviad.ai/blog
+  loadedLayout: 1

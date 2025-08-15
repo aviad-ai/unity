@@ -1,6 +1,6 @@
 ﻿{
   "name": "ai.aviad.core",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "displayName": "Aviad AI",
   "description": "A package to simplify integration of language models into Unity.",
   "unity": "2021.3",
@@ -12,5 +12,16 @@
     "aviad",
     "ai",
     "llm"
+  ],
+  "aviadDefaults": {
+    "enableNativeLogging": true,
+    "logLevel": "Info"
+  },
+    "samples": [
+      {
+          "displayName": "Aviad Demo Samples",
+          "description": "Contains sample demos for using our plugin. Requires TMPro Essentials to be installed.",
+          "path": "Samples~/AviadDemo"
+      }
   ]
 }
