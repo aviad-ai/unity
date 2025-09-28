@@ -15,11 +15,19 @@ namespace Aviad.Samples
         private int maxLookAngle = 90;
         public Camera playerCamera;
         bool _active = true;
-
+        [SerializeField] InputActionAsset actions;
+        private void OnEnable()
+        {
+            actions.Enable();
+        }
+        private void OnDisable()
+        {
+            actions.Disable();
+        }
         public void Start()
         {
-            moveAction = InputSystem.actions.FindAction("Move");
-            lookAction = InputSystem.actions.FindAction("Look");
+            moveAction = actions.FindAction("Move");
+            lookAction = actions.FindAction("Look");
             characterController = GetComponent<CharacterController>();
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;

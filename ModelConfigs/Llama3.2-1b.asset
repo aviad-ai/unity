@@ -1,0 +1,156 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4ca57e3f7e7b4d08863716ea49d5f06, type: 3}
+  m_Name: Llama3.2-1b
+  m_EditorClassIdentifier:
+  modelUrl: https://huggingface.co/unsloth/Llama-3.2-1B-Instruct-GGUF/resolve/main/Llama-3.2-1B-Instruct-Q4_K_M.gguf
+  modelParams:
+    modelPath:
+    gpuLayers:
+      hasValue: 0
+      value: 0
+    splitMode:
+      hasValue: 0
+      value: 0
+    mainGpu:
+      hasValue: 0
+      value: 0
+    vocabOnly:
+      hasValue: 0
+      value: 0
+    useMmap:
+      hasValue: 0
+      value: 0
+    useMlock:
+      hasValue: 0
+      value: 0
+    checkTensors:
+      hasValue: 0
+      value: 0
+    enableAbortInit: 0
+    contextLength:
+      hasValue: 1
+      value: 2048
+    batchSize:
+      hasValue: 1
+      value: 2048
+    ubatchSize:
+      hasValue: 0
+      value: 0
+    maxSequences:
+      hasValue: 0
+      value: 0
+    threads:
+      hasValue: 1
+      value: 4
+    threadsBatch:
+      hasValue: 0
+      value: 0
+    ropeScalingType:
+      hasValue: 0
+      value: 0
+    poolingType:
+      hasValue: 0
+      value: 0
+    attentionType:
+      hasValue: 0
+      value: 0
+    ropeFreqBase:
+      hasValue: 0
+      value: 0
+    ropeFreqScale:
+      hasValue: 0
+      value: 0
+    yarnExtFactor:
+      hasValue: 0
+      value: 0
+    yarnAttnFactor:
+      hasValue: 0
+      value: 0
+    yarnBetaFast:
+      hasValue: 0
+      value: 0
+    yarnBetaSlow:
+      hasValue: 0
+      value: 0
+    yarnOrigCtx:
+      hasValue: 0
+      value: 0
+    defragThreshold:
+      hasValue: 0
+      value: 0
+    embeddings:
+      hasValue: 0
+      value: 0
+    offloadKqv:
+      hasValue: 0
+      value: 0
+    flashAttn:
+      hasValue: 0
+      value: 0
+    noPerf:
+      hasValue: 0
+      value: 0
+    opOffload:
+      hasValue: 0
+      value: 0
+    swaFull:
+      hasValue: 0
+      value: 0
+    enableAbortGeneration: 0
+  generationConfig:
+    chatTemplateParams:
+      chatTemplate:
+      useModelsChatTemplate: 1
+    maxTokens: 256
+    chunkSize: 1
+    samplerChain: 0600000001000000
+    distSeed: 0
+    topK: 40
+    topP: 0.9
+    topPMinKeep: 1
+    minP: 0.05
+    minPMinKeep: 1
+    typicalP: 1
+    typicalMinKeep: 1
+    temperature: 0.7
+    tempExtT: 1
+    tempExtDelta: 0
+    tempExtExponent: 1
+    xtcP: 0
+    xtcT: 0
+    xtcMinKeep: 1
+    xtcSeed: 0
+    topNSigma: 1
+    mirostatNVocab: 0
+    mirostatSeed: 0
+    mirostatTau: 5
+    mirostatEta: 0.1
+    mirostatM: 100
+    mirostatV2Seed: 0
+    mirostatV2Tau: 5
+    mirostatV2Eta: 0.1
+    grammarStr:
+    grammarRoot:
+    grammarTriggerPatterns: []
+    penaltyLastN: 64
+    penaltyRepeat: 1
+    penaltyFreq: 0
+    penaltyPresent: 0
+    dryNCtxTrain: 1024
+    dryMultiplier: 0
+    dryBase: 1.75
+    dryAllowedLength: 2
+    dryPenaltyLastN: -1
+    drySeqBreakers: []
+  embeddingParams:
+    maxEmbeddingsSize: 4096

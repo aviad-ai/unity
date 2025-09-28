@@ -40,7 +40,7 @@ namespace Aviad
                     // Increment reference count and return existing handle
                     existingLib.LoadCount++;
                     _loadedLibraries[normalizedPath] = existingLib;
-                    AviadLogger.Debug($"[Aviad] Library '{normalizedPath}' already loaded. Reference count: {existingLib.LoadCount}");
+                    PackageLogger.Debug($"[Aviad] Library '{normalizedPath}' already loaded. Reference count: {existingLib.LoadCount}");
                     return existingLib.Handle;
                 }
 
@@ -56,7 +56,7 @@ namespace Aviad
                         LoadCount = 1,
                         FullPath = normalizedPath
                     };
-                    AviadLogger.Debug($"[Aviad] Successfully loaded library '{normalizedPath}'. Handle: {handle}");
+                    PackageLogger.Debug($"[Aviad] Successfully loaded library '{normalizedPath}'. Handle: {handle}");
                 }
 
                 return handle;
@@ -77,7 +77,7 @@ namespace Aviad
 
             if (handle == IntPtr.Zero)
             {
-                AviadLogger.Error($"[Aviad] LoadLibrary failed for '{path}'.");
+                PackageLogger.Error($"[Aviad] LoadLibrary failed for '{path}'.");
             }
 
             return handle;
@@ -103,7 +103,7 @@ namespace Aviad
 
             if (symbol == IntPtr.Zero)
             {
-                AviadLogger.Error($"[Aviad] Failed to load symbol '{symbolName}' from library handle {library}");
+                PackageLogger.Error($"[Aviad] Failed to load symbol '{symbolName}' from library handle {library}");
                 throw new EntryPointNotFoundException($"Unable to load symbol '{symbolName}'.");
             }
             return Marshal.GetDelegateForFunctionPointer<T>(symbol);
@@ -132,7 +132,7 @@ namespace Aviad
 
                 if (libraryPath == null)
                 {
-                    AviadLogger.Warning($"[Aviad] Attempted to free unknown library handle {library}");
+                    PackageLogger.Warning($"[Aviad] Attempted to free unknown library handle {library}");
                     // Still attempt to free it in case it was loaded outside our tracking
                     FreeLibraryInternal(library);
                     return;
@@ -146,13 +146,13 @@ namespace Aviad
                     // No more references, actually free the library
                     FreeLibraryInternal(library);
                     _loadedLibraries.Remove(libraryPath);
-                    AviadLogger.Debug($"[Aviad] Library '{libraryPath}' unloaded and removed from cache.");
+                    PackageLogger.Debug($"[Aviad] Library '{libraryPath}' unloaded and removed from cache.");
                 }
                 else
                 {
                     // Still has references, just update the count
                     _loadedLibraries[libraryPath] = libInfo;
-                    AviadLogger.Debug($"[Aviad] Library '{libraryPath}' reference count decremented to {libInfo.LoadCount}");
+                    PackageLogger.Debug($"[Aviad] Library '{libraryPath}' reference count decremented to {libInfo.LoadCount}");
                 }
             }
         }
@@ -198,11 +198,11 @@ namespace Aviad
                     try
                     {
                         FreeLibraryInternal(kvp.Value.Handle);
-                        AviadLogger.Debug($"[Aviad] Force unloaded library '{kvp.Key}'");
+                        PackageLogger.Debug($"[Aviad] Force unloaded library '{kvp.Key}'");
                     }
                     catch (Exception ex)
                     {
-                        AviadLogger.Error($"[Aviad] Error force unloading library '{kvp.Key}': {ex.Message}");
+                        PackageLogger.Error($"[Aviad] Error force unloading library '{kvp.Key}': {ex.Message}");
                     }
                 }
                 _loadedLibraries.Clear();

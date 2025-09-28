@@ -44,7 +44,7 @@ namespace Aviad
                 }
                 else
                 {
-                    AviadLogger.Warning("[Aviad] Could not locate package path for ai.aviad.core (expected in Packages/ or Assets/AviadAI/)");
+                    PackageLogger.Warning("Could not locate package path for ai.aviad.core (expected in Packages/ or Assets/AviadAI/)");
                     return;
                 }
             }
@@ -54,7 +54,7 @@ namespace Aviad
 
             if (!Directory.Exists(sourceBinDir))
             {
-                AviadLogger.Warning($"[Aviad] Source bin directory not found at {sourceBinDir}");
+                PackageLogger.Warning($"Source bin directory not found at {sourceBinDir}");
                 return;
             }
 
@@ -66,7 +66,7 @@ namespace Aviad
                 }
                 catch (Exception ex)
                 {
-                    AviadLogger.Warning($"[Aviad] Failed to delete existing bin directory: {ex.Message}");
+                    PackageLogger.Warning($"Failed to delete existing bin directory: {ex.Message}");
                 }
             }
 
@@ -85,12 +85,12 @@ namespace Aviad
                 }
                 catch (Exception ex)
                 {
-                    AviadLogger.Warning($"[Aviad] Failed to copy '{file}' to '{destFile}': {ex.Message}");
+                    PackageLogger.Warning($"Failed to copy '{file}' to '{destFile}': {ex.Message}");
                 }
             }
 
             AssetDatabase.Refresh();
-            AviadLogger.Debug("[Aviad] Bin files installed to StreamingAssets/Aviad/bin.");
+            PackageLogger.Debug("Bin files installed to StreamingAssets/Aviad/bin.");
         }
 
         private static string GetPackagePath(string packageName)

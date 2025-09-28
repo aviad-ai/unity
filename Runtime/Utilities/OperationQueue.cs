@@ -37,7 +37,7 @@ namespace Aviad
                 }
                 catch (Exception ex)
                 {
-                    AviadLogger.Error($"Exception in wrapped callback for ID {id}: {ex}");
+                    PackageLogger.Error($"Exception in wrapped callback for ID {id}: {ex}");
                 }
                 finally
                 {
@@ -60,7 +60,7 @@ namespace Aviad
                 }
                 catch (Exception ex)
                 {
-                    AviadLogger.Error($"Exception in wrapped callback for ID {id}: {ex}");
+                    PackageLogger.Error($"Exception in wrapped callback for ID {id}: {ex}");
                 }
                 finally
                 {
@@ -77,13 +77,13 @@ namespace Aviad
         {
             if (action == null)
             {
-                AviadLogger.Error("Cannot handle null action in OperationQueue");
+                PackageLogger.Error("Cannot handle null action in OperationQueue");
                 return;
             }
 
             if (id == Guid.Empty)
             {
-                AviadLogger.Warning("Using empty GUID for operation queue action");
+                PackageLogger.Warning("Using empty GUID for operation queue action");
             }
 
             if (IsProcessing)
@@ -100,7 +100,7 @@ namespace Aviad
                 }
                 catch (Exception ex)
                 {
-                    AviadLogger.Error($"Exception executing action with ID {id}: {ex}");
+                    PackageLogger.Error($"Exception executing action with ID {id}: {ex}");
                     ProcessNext(id);
                 }
             }
@@ -111,7 +111,7 @@ namespace Aviad
             if (_currentActionId != id)
             {
                 // Wrong ID, ignore
-                AviadLogger.Warning("OperationQueue received callbacks out of order. This may cause a stall or out-of-order execution.");
+                PackageLogger.Warning("OperationQueue received callbacks out of order. This may cause a stall or out-of-order execution.");
                 return;
             }
 
@@ -129,7 +129,7 @@ namespace Aviad
                 }
                 catch (Exception ex)
                 {
-                    AviadLogger.Error($"Exception executing action with ID {id}: {ex}");
+                    PackageLogger.Error($"Exception executing action with ID {id}: {ex}");
                     ProcessNext(nextId);
                 }
             }
